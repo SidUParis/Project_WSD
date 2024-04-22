@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from collections import defaultdict
 from nltk.corpus import wordnet # This might require "nltk.download('wordnet')" and "nltk.download('omw-1.4')".
 import math
 import random
+from sklearn.model_selection import KFold
+
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.pipeline import make_pipeline
 
 from utils import *
 
@@ -97,82 +103,93 @@ class SimplifiedLesk(WSDClassifier):
     Simplified Lesk algorithm
     """
     
-    def __init__(self,window_size=-1,idf=False):
-        """
-        """
-        
-        self.signatures = {} # Should be defined as a dictionary from senses to signatures (dict[string -> set[string]]) at training.
+    def __init__(self, window_size=-1, idf=False):
+        self.signature = {}  # Dictionary from word senses to signatures (dict[word -> dict[sense -> set[string]]])
         self.idf = idf
         self.window_size = window_size
+        self.wn_synet = wordnet.synset
+
     def train(self, instances=[]):
         """
-        instances: list[WSDInstance]
-
-        {'bass': {'bass%music': ['bass.n.01', 'bass.n.02', 'bass.n.03', 'bass.n.06', 'bass.n.07'], 'bass%fish': ['sea_bass.n.01', 'freshwater_bass.n.01', 'bass.n.08']}, 'crane': {'crane%machine': ['crane.n.04'], 'crane%bird': ['crane.n.05']}, 'motion': {'motion%physical': ['gesture.n.02', 'movement.n.03', 'motion.n.03', 'motion.n.04', 'motion.n.06'], 'motion%legal': ['motion.n.05']}, 'palm': {'palm%hand': ['palm.n.01'], 'palm%tree': ['palm.n.03']}, 'plant': {'plant%factory': ['plant.n.01'], 'plant%living': ['plant.n.02']}, 'tank': {'tank%vehicle': ['tank.n.01'], 'tank%container': ['tank.n.02']}}
-        {'bass%music': ['bass.n.01', 'bass.n.02', 'bass.n.03', 'bass.n.06', 'bass.n.07'], 'bass%fish': ['sea_bass.n.01', 'freshwater_bass.n.01', 'bass.n.08']}
-        ['sea_bass.n.01', 'freshwater_bass.n.01', 'bass.n.08']
-        ['bass.n.01', 'bass.n.02', 'bass.n.03', 'bass.n.06', 'bass.n.07']
-    
-
+        Train the classifier by building signatures for each sense of each word.
+        Each signature is a set containing the definition and examples from WordNet,
+        plus the word itself.
         """
-    # without idf and windowsize 
+        for lemma in WN_CORRESPONDANCES:
+            # print(lemma)  ##uncomment for debug ----sun
+            for sense in WN_CORRESPONDANCES[lemma]:
+                # print(sense) ##uncomment for debug ----sun
+                self.signature[sense] = set() # initialize the signature of the sense 
+                # DEFINITION USING UPDATE INSTEAD OF ADD BECAUSE WE WANT TO ADD MULTIPLE ELEMENTS --sun
+                for synset in WN_CORRESPONDANCES[lemma][sense]:
+                    self.signature[sense].update(self.wn_synet(synset).definition().split())
+                # print(signatures[sense]) ##uncomment for debug ----sun
+                # EXAMPLE USING UPDATE INSTEAD OF ADD BECAUSE WE WANT TO ADD MULTIPLE ELEMENTS --sun
+                for example in self.wn_synet(synset).examples():
+                    self.signature[sense].update(example.split())
+                # ADD LEMMA by using add instead of update because we want to add only one element --- sun
+                    self.signature[sense].add(lemma) # because update is to use for multiple 
+                # print(self.signature[sense]) ##uncomment for debug ----sun
+        ### context 
         for instance in instances:
-            correspondances = WN_CORRESPONDANCES[instance.lemma][instance.sense]
-            for corres in correspondances:
-                if instance.lemma not in self.signatures:
-                    self.signatures[instance.lemma] = {}
-                if instance.sense not in self.signatures[instance.lemma]:
-                    self.signatures[instance.lemma][instance.sense] = set()
-                self.signatures[instance.lemma][instance.sense].add(wordnet.synset(corres).definition())
-                #get example
-                self.signatures[instance.lemma][instance.sense].update(wordnet.synset(corres).examples()) # update 
-                self.signatures[instance.lemma][instance.sense].add(instance.lemma)
-    # with window size
-        
-        
-        # For the signature of a sense, use (i) the definition of each of the corresponding WordNet synsets, (ii) all of the corresponding examples in WordNet and (iii) the corresponding training instances.
-        pass # TODO
+            if self.window_size == -1:
+                self.signature[instance.sense].update(instance.context)
+            else:
+                self.signature[instance.sense].update(instance.left_context[-self.window_size:]+instance.right_context[:self.window_size])
+            # print(self.signature) ##uncomment for debug ----sun
 
-    def predict_sense(self, instance,window_size=-1):
-        """
-        instance: WSDInstance
-        """
-        ## without window
-        sigatures = self.signatures[instance.lemma][instance.sense]
-        if window_size == -1:
-            max_overlap = 0
-            best_sense = None
-            for sense in self.signatures[instance.lemma]:
-                overlap = len(sigatures.intersection(self.signatures[instance.lemma][sense]))
-                if overlap > max_overlap:
-                    max_overlap = overlap
-                    best_sense = sense
-                
-        # with window
-        if window_size>0:
-            window_size = self.window_size
-            context = instance.context
-            context = context.split()
-            index = context.index(instance.lemma)
-            context = context[max(0, index - window_size):min(len(context), index + window_size + 1)]
-            context = ' '.join(context)
-            sigatures = self.signatures[instance.lemma][instance.sense]
-            max_overlap = 0
-            best_sense = None
-            for sense in self.signatures[instance.lemma]:
-                overlap = len(sigatures.intersection(self.signatures[instance.lemma][sense]))
-                if overlap > max_overlap:
-                    max_overlap = overlap
-                    best_sense = sense
-            
-        return best_sense
-    
+     
+  
+    def predict_sense(self, instance):
+        ## 2 different ways to get the prediction, one using window size and the other without window size
         
-        pass # TODO
+        all_senses = list(WN_CORRESPONDANCES[instance.lemma].keys()) # list[string]
+        
+        # mfs = all_senses[0]  # Assume the first sense in the list is the most frequent
+        scores = list(len(senses)*[0]) # initialize the scores for each sense
+        for i,sense in enumerate(senses):
+            for word in instance.context:
+                if word in self.signature[sense] and word not in STOP_WORDS:
+                    if self.idf:
+                        scores[i] += math.log(len(self.signature[sense])/sum([1 for sense in self.signature if word in self.signature[sense]]))
+                    else:
+                        scores[i] += 1
+        mfs = senses[scores.index(max(scores))] # get the sense with the highest score 
+
+        return mfs
+        
+
+
     
     def __str__(self):
         return "SimplifiedLesk"
 
+def cross_validate(classifier, instances, k=5):
+    kf = KFold(n_splits=k, shuffle=True, random_state=42)
+    scores = []
+
+    for train_index, test_index in kf.split(instances):
+        train_instances = [instances[i] for i in train_index]
+        test_instances = [instances[i] for i in test_index]
+
+        classifier.train(train_instances)
+        accuracy = classifier.evaluate(test_instances)
+        scores.append(accuracy)
+
+    return scores
+
+class NaiveBayesWSD(WSDClassifier):
+    def __init__(self):
+        self.model = make_pipeline(CountVectorizer(), MultinomialNB())
+
+    def train(self, instances):
+        texts = [' '.join(i.context) for i in instances]  # Convert list of words to a single string
+        labels = [i.sense for i in instances]
+        self.model.fit(texts, labels)
+
+    def predict_sense(self, instance):
+        context_str = ' '.join(instance.context)  # Ensure the context is a single string
+        return self.model.predict([context_str])[0]
 ###############################################################
 
 
@@ -235,24 +252,41 @@ if __name__ == '__main__':
     pass # TODO
     # split 
     # train,test = random_data_split(instances, p=8, n=10)
-    simplified_lesk = SimplifiedLesk()
-    simplified_lesk.train(train)
+    # if we keep the same train , it will easily be 1 at acc so we many change something
+    # for i in range(10):
+    #     train,test = random_data_split(instances, p=i, n=10)
+    #     clf = SimplifiedLesk()
+    #     clf.train(train)
+    #     print(f"Simplified Lesk Accuracy without specifying Window size and IDF=FALSE:{clf.evaluate(test)}"
+    clf = SimplifiedLesk()
+    train_clf,test_clf = data_split(instances, p=7, n=10)
+    clf.train(train_clf)
+    print(f"Simplified Lesk Accuracy without specifying Window size and IDF=FALSE:{clf.evaluate(test_clf)}")
 
-    print(f"Simplified Lesk accuracy: {simplified_lesk.evaluate(test)}")
 
 
     
     # Evaluation of Simplified Lesk (with a window of size 10 and no IDF values) using different splits of the corpus.
     pass # TODO
-    simplified_lesk = SimplifiedLesk(window_size=10)
-    simplified_lesk.train(train)
-    print(f"Simplified Lesk accuracy with window size 10: {simplified_lesk.evaluate(test)}")
+
+    clf_window= SimplifiedLesk(window_size=10,idf=False)
+
+    clf_window.train(train_clf)
+    print(f"Simplified Lesk accuracy with window size fixed at 10 and IDF= FALSE: {clf_window.evaluate(test_clf)}")
     
     # Evaluation of Simplified Lesk (with IDF values and no fixed window) using different splits of the corpus.
     pass # TODO
+    clf_idf = SimplifiedLesk(idf=True)
+    clf_idf.train(train_clf)
+    print(f"Simplified Lesk accuracy with IDF=TRUE and no fix window size: {clf_idf.evaluate(test_clf)}")
     
     # Cross-validation
     pass # TODO
-    
+    lesk_classifier = SimplifiedLesk(window_size=10)
+    lesk_scores = cross_validate(lesk_classifier, instances)
+    print(f'Average accuracy over {len(lesk_scores)} folds: {sum(lesk_scores) / len(lesk_scores)}') 
     # Naive Bayes classifier
     pass # TODO
+    nb_classifier = NaiveBayesWSD()
+    nb_classifier.train(train_clf)
+    print(f"Naive Bayes classifier accuracy: {nb_classifier.evaluate(test_clf)}")

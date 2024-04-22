@@ -5,6 +5,6 @@ cd TWA-sensetagged
 for file in *.test
 do
   echo "Processing $file....."
-  python ../wsd_copy.py "$file"
+  python ../wsd.py "$file"
 
 done
