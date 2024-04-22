@@ -1,0 +1,94 @@
+Script started on Mon Apr 22 23:50:05 2024
+[1m[7m%[27m[1m[0m                                                                                                                                                                        [0m[27m[24m[J(base) sidneysun@Sidneys-Computer TP-WSD % [K[?2004h../
+[JNaiveBayesClassifier_tuto/  __pycache__/                twa.py*                     wsd.py*                     
+TWA-sensetagged/            run_wsd.sh*                 utils.py*                   wsd_copy.py*                [A[A[0m[27m[24m[43C./[Krun_wsd.sh[1m [0m[0m [?2004l
+[JProcessing all.test.....
+bass%fish	10
+bass%music	97
+crane%bird	23
+crane%machine	72
+motion%legal	59
+motion%physical	142
+palm%hand	143
+palm%tree	58
+plant%factory	102
+plant%living	86
+tank%container	126
+tank%vehicle	75
+
+Random baseline accuracy: 0.5156092648539778
+Most Frequent Sense baseline accuracy: 0.6464646464646465
+Simplified Lesk Accuracy without specifying Window size and IDF=FALSE:0.3602693602693603
+Simplified Lesk accuracy with window size fixed at 10 and IDF= FALSE: 0.35353535353535354
+Simplified Lesk accuracy with IDF=TRUE and no fix window size: 0.3367003367003367
+Average accuracy over 5 folds: 0.39066544845439327
+Naive Bayes classifier accuracy: 0.48148148148148145
+Processing bass.test.....
+bass%fish	10
+bass%music	97
+
+Random baseline accuracy: 0.4672897196261682
+Most Frequent Sense baseline accuracy: 0.9
+Simplified Lesk Accuracy without specifying Window size and IDF=FALSE:0.9333333333333333
+Simplified Lesk accuracy with window size fixed at 10 and IDF= FALSE: 0.9333333333333333
+Simplified Lesk accuracy with IDF=TRUE and no fix window size: 0.9333333333333333
+Average accuracy over 5 folds: 0.9077922077922077
+Naive Bayes classifier accuracy: 0.9666666666666667
+Processing crane.test.....
+crane%bird	23
+crane%machine	72
+
+Random baseline accuracy: 0.4631578947368421
+Most Frequent Sense baseline accuracy: 0.7222222222222222
+Simplified Lesk Accuracy without specifying Window size and IDF=FALSE:0.7407407407407407
+Simplified Lesk accuracy with window size fixed at 10 and IDF= FALSE: 0.7407407407407407
+Simplified Lesk accuracy with IDF=TRUE and no fix window size: 0.7407407407407407
+Average accuracy over 5 folds: 0.8
+Naive Bayes classifier accuracy: 0.8148148148148148
+Processing motion.test.....
+motion%legal	59
+motion%physical	142
+
+Random baseline accuracy: 0.4228855721393035
+Most Frequent Sense baseline accuracy: 0.725
+Simplified Lesk Accuracy without specifying Window size and IDF=FALSE:0.85
+Simplified Lesk accuracy with window size fixed at 10 and IDF= FALSE: 0.8833333333333333
+Simplified Lesk accuracy with IDF=TRUE and no fix window size: 0.8333333333333334
+Average accuracy over 5 folds: 0.8708536585365854
+Naive Bayes classifier accuracy: 0.9166666666666666
+Processing palm.test.....
+palm%hand	143
+palm%tree	58
+
+Random baseline accuracy: 0.5422885572139303
+Most Frequent Sense baseline accuracy: 0.825
+Simplified Lesk Accuracy without specifying Window size and IDF=FALSE:0.7666666666666667
+Simplified Lesk accuracy with window size fixed at 10 and IDF= FALSE: 0.8333333333333334
+Simplified Lesk accuracy with IDF=TRUE and no fix window size: 0.7666666666666667
+Average accuracy over 5 folds: 0.7413414634146342
+Naive Bayes classifier accuracy: 0.8333333333333334
+Processing plant.test.....
+plant%factory	102
+plant%living	86
+
+Random baseline accuracy: 0.526595744680851
+Most Frequent Sense baseline accuracy: 0.5833333333333334
+Simplified Lesk Accuracy without specifying Window size and IDF=FALSE:0.7454545454545455
+Simplified Lesk accuracy with window size fixed at 10 and IDF= FALSE: 0.8181818181818182
+Simplified Lesk accuracy with IDF=TRUE and no fix window size: 0.7454545454545455
+Average accuracy over 5 folds: 0.7712660028449502
+Naive Bayes classifier accuracy: 0.8181818181818182
+Processing tank.test.....
+tank%container	126
+tank%vehicle	75
+
+Random baseline accuracy: 0.44776119402985076
+Most Frequent Sense baseline accuracy: 0.575
+Simplified Lesk Accuracy without specifying Window size and IDF=FALSE:0.7166666666666667
+Simplified Lesk accuracy with window size fixed at 10 and IDF= FALSE: 0.7333333333333333
+Simplified Lesk accuracy with IDF=TRUE and no fix window size: 0.7333333333333333
+Average accuracy over 5 folds: 0.7659756097560975
+Naive Bayes classifier accuracy: 0.8166666666666667
+[1m[7m%[27m[1m[0m                                                                                                                                                                        [0m[27m[24m[J(base) sidneysun@Sidneys-Computer TP-WSD % [K[?2004heexit[?2004l
+
+Script done on Mon Apr 22 23:51:39 2024
